@@ -1,0 +1,5 @@
+target/
+giacrs_internals/target/
+
+test.cpp
+a.out

@@ -1,0 +1,18 @@
+[package]
+name = "giacrs"
+description = "Bindings to the giac/xcas library"
+repository = "https://github.com/supersurviveur/giacrs"
+license = "MIT"
+readme = "README.md"
+keywords = ["bindings", "giac", "xcas"]
+categories = ["external-ffi-bindings"]
+authors = ["Julien THILLARD"]
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+giacrs_internals = { path = "./giacrs_internals", version = "0.1.0" }
+
+[build-dependencies]
+cc = "1.2.4"
+bindgen = "0.71.0"

@@ -1,0 +1,17 @@
+[package]
+name = "giacrs_internals"
+description = "Internal proc macros for the giacrs crate"
+repository = "https://github.com/supersurviveur/giacrs"
+license = "MIT"
+readme = "README.md"
+authors = ["Julien THILLARD"]
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+proc-macro2 = "1.0.92"
+quote = "1.0.37"
+syn = { version = "2.0.90", features = ["full"] }
+
+[lib]
+proc-macro = true

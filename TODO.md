@@ -1,0 +1,4 @@
+- More errors handling
+- Doc alias 
+- Methods:
+  - is_prime
