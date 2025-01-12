@@ -45,4 +45,4 @@ fn main() -> Result<(), GiacError> {
 
 # Contributing
 
-See [CONTRIBUTING.md](https://github.com/supersurviveur/giacrs/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/supersurviveur/giacrs/blob/main/CONTRIBUTING.md)
