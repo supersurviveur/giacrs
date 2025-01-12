@@ -7,7 +7,7 @@ readme = "README.md"
 keywords = ["bindings", "giac", "xcas"]
 categories = ["external-ffi-bindings"]
 authors = ["Julien THILLARD"]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
