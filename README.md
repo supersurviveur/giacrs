@@ -2,7 +2,7 @@
 
 Bindings to the [Giac library](https://www-fourier.ujf-grenoble.fr/~parisse/giac_us.html) used in [xcas](https://www-fourier.ujf-grenoble.fr/~parisse/giac.html).
 
-This library is under developpment, feels free to [contribute](#contributing) !
+This library is under developpment. Feel free to [contribute](#contributing) !
 
 # Usage
 
@@ -11,10 +11,12 @@ This library is under developpment, feels free to [contribute](#contributing) !
 giacrs = "0.1.0"
 ```
 
-There must be a giac library installed on your system:\
-You can use `pacman -S giac` on arch.
+You must have the giac library installed on your system:\
+You can use `pacman -S giac` on Arch Linux.
 
 # Examples
+
+Here is an example of how to use the Giacrs library:
 
 ```rust
 use giacrs::{
@@ -45,4 +47,4 @@ fn main() -> Result<(), GiacError> {
 
 # Contributing
 
-See [CONTRIBUTING.md](https://github.com/supersurviveur/giacrs/blob/main/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/supersurviveur/giacrs/blob/main/CONTRIBUTING.md) for more information on how to contribute.

@@ -362,83 +362,6 @@ impl Gen {
         }
     }
 
-    /// Solve the equation `u*a + v*b = c`.
-    /// c must be a multiple of `gcd(a, b)` for the existence of a solution.
-    /// ```
-    /// use giacrs::context::Context;
-    /// use giacrs::gen::Gen;
-    ///
-    /// let ctx = Context::new();
-    /// let a = Gen::from(48);
-    ///
-    /// let (u, v) = a.iabcuv(&30.into(), &18.into(), &ctx)?;
-    /// // 48*6 + 30*(-9) = 18
-    /// assert_eq!(6, u.to_int()?);
-    /// assert_eq!(-9, v.to_int()?);
-    ///
-    /// // 19 is not a multiple of 6 = gcd(48, 30)
-    /// assert!(a.iabcuv(&30.into(), &19.into(), &ctx).is_err());
-    /// # use giacrs::GiacError;
-    /// # Ok::<(), GiacError>(())
-    /// ```
-    /// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node48.html>
-    pub fn iabcuv(&self, b: &Gen, c: &Gen, ctx: &Context) -> Result<(Self, Self), GiacError> {
-        let d = self.gcd(b, ctx)?;
-        if !(c.irem(&d)?).is_zero(ctx)? {
-            return Err(GiacError::NoSolution("c must be a multiple of `gcd(a,b)`"));
-        }
-        let u = Self::new();
-        let v = Self::new();
-        let error = unsafe {
-            ffi::giacrs_gen_iabcuv(
-                self.as_gen_ref(),
-                b.as_gen_ref(),
-                c.as_gen_ref(),
-                u.as_gen_ref(),
-                v.as_gen_ref(),
-                ctx.as_context_ref(),
-            )
-        };
-        if error == std::ptr::null() {
-            Ok((u, v))
-        } else {
-            Err(GiacError::InternalError(error.into()))
-        }
-    }
-
-    /// Computes the chinese remainders.
-    /// Returns `(c, lcm(amod, bmod))` such that `∀k ∈ ℤ, d = c + k*lcm(amod, bmod)` has properties `d=a[amod]` and `d=b[bmod]`
-    /// ```
-    /// use giacrs::gen::Gen;
-    ///
-    /// let a = Gen::from(3);
-    ///
-    /// let (c, cmod) = a.ichinrem(&5.into(), &9.into(), &13.into())?;
-    /// assert_eq!(-17, c.to_int()?);
-    /// assert_eq!(65, cmod.to_int()?);
-    ///
-    /// # use giacrs::GiacError;
-    /// # Ok::<(), GiacError>(())
-    /// ```
-    /// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node49.html>
-    pub fn ichinrem(&self, amod: &Gen, b: &Gen, bmod: &Gen) -> Result<(Self, Self), GiacError> {
-        let c = Self::new();
-        let error = unsafe {
-            ffi::giacrs_gen_ichinrem(
-                self.as_gen_ref(),
-                amod.as_gen_ref(),
-                b.as_gen_ref(),
-                bmod.as_gen_ref(),
-                c.as_gen_ref(),
-            )
-        };
-        if error == std::ptr::null() {
-            Ok((c, amod.lcm(&bmod)?))
-        } else {
-            Err(GiacError::InternalError(error.into()))
-        }
-    }
-
     /// Solves `a² + b² = p`. `p` must be congruent to 1 modulo 4.
     /// ```
     /// use giacrs::context::Context;
@@ -495,56 +418,125 @@ impl Gen {
     pub fn euler(&self, ctx: &Context) -> Result<Self, GiacError> {
         ffi_safe_call! { ffi::giacrs_gen_euler(self.as_gen_ref(), result.as_gen_ref(), ctx.as_context_ref()) }
     }
+}
 
-    /// Computes the Legendre symbol
-    /// ```
-    /// use giacrs::gen::Gen;
-    ///
-    /// let a = Gen::from(26);
-    /// let b = Gen::from(27);
-    /// let c = Gen::from(34);
-    ///
-    /// assert_eq!(1, a.legendre_symbol(&17.into())?);
-    /// assert_eq!(-1, b.legendre_symbol(&17.into())?);
-    /// assert_eq!(0, c.legendre_symbol(&17.into())?);
-    /// # use giacrs::GiacError;
-    /// # Ok::<(), GiacError>(())
-    /// ```
-    /// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node53.html>
-    pub fn legendre_symbol(&self, n: &Gen) -> Result<i8, GiacError> {
-        let mut result = 0;
-        let error =
-            unsafe { ffi::giacrs_gen_legendre(self.as_gen_ref(), n.as_gen_ref(), &mut result) };
-        if error == std::ptr::null() {
-            Ok(result)
-        } else {
-            Err(GiacError::InternalError(error.into()))
-        }
+/// Solve the equation `u*a + v*b = c`.
+/// c must be a multiple of `gcd(a, b)` for the existence of a solution.
+/// ```
+/// use giacrs::context::Context;
+/// use giacrs::gen::Gen;
+/// use giacrs::integers::iabcuv;
+///
+/// let ctx = Context::new();
+///
+/// let (u, v) = iabcuv(&48.into(), &30.into(), &18.into(), &ctx)?;
+/// // 48*6 + 30*(-9) = 18
+/// assert_eq!(6, u.to_int()?);
+/// assert_eq!(-9, v.to_int()?);
+///
+/// // 19 is not a multiple of 6 = gcd(48, 30)
+/// assert!(iabcuv(&48.into(), &30.into(), &19.into(), &ctx).is_err());
+/// # use giacrs::GiacError;
+/// # Ok::<(), GiacError>(())
+/// ```
+/// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node48.html>
+pub fn iabcuv(a: &Gen, b: &Gen, c: &Gen, ctx: &Context) -> Result<(Gen, Gen), GiacError> {
+    // TODO avoid making solution check in rust AND in cpp
+    let d = a.gcd(b, ctx)?;
+    if !(c.irem(&d)?).is_zero(ctx)? {
+        return Err(GiacError::NoSolution("c must be a multiple of `gcd(a,b)`"));
     }
+    let u = Gen::new();
+    let v = Gen::new();
+    let error = unsafe {
+        ffi::giacrs_gen_iabcuv(
+            a.as_gen_ref(),
+            b.as_gen_ref(),
+            c.as_gen_ref(),
+            u.as_gen_ref(),
+            v.as_gen_ref(),
+            ctx.as_context_ref(),
+        )
+    };
+    if error == std::ptr::null() {
+        Ok((u, v))
+    } else {
+        Err(GiacError::InternalError(error.into()))
+    }
+}
 
-    /// Computes the Jacobi symbol
-    /// ```
-    /// use giacrs::gen::Gen;
-    ///
-    /// let a = Gen::from(25);
-    /// let b = Gen::from(35);
-    /// let c = Gen::from(33);
-    ///
-    /// assert_eq!(1, a.jacobi_symbol(&12.into())?);
-    /// assert_eq!(-1, b.jacobi_symbol(&12.into())?);
-    /// assert_eq!(0, c.jacobi_symbol(&12.into())?);
-    /// # use giacrs::GiacError;
-    /// # Ok::<(), GiacError>(())
-    /// ```
-    /// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node54.html>
-    pub fn jacobi_symbol(&self, n: &Gen) -> Result<i8, GiacError> {
-        let mut result = 0;
-        let error =
-            unsafe { ffi::giacrs_gen_jacobi(self.as_gen_ref(), n.as_gen_ref(), &mut result) };
-        if error == std::ptr::null() {
-            Ok(result)
-        } else {
-            Err(GiacError::InternalError(error.into()))
-        }
+/// Computes the chinese remainders.
+/// Returns `(c, lcm(amod, bmod))` such that `∀k ∈ ℤ, d = c + k*lcm(amod, bmod)` has properties `d=a[amod]` and `d=b[bmod]`
+/// ```
+/// use giacrs::gen::Gen;
+/// use giacrs::integers::ichinrem;
+///
+/// let (c, cmod) = ichinrem(&3.into(), &5.into(), &9.into(), &13.into())?;
+/// assert_eq!(-17, c.to_int()?);
+/// assert_eq!(65, cmod.to_int()?);
+///
+/// # use giacrs::GiacError;
+/// # Ok::<(), GiacError>(())
+/// ```
+/// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node49.html>
+pub fn ichinrem(a: &Gen, amod: &Gen, b: &Gen, bmod: &Gen) -> Result<(Gen, Gen), GiacError> {
+    let c = Gen::new();
+    let error = unsafe {
+        ffi::giacrs_gen_ichinrem(
+            a.as_gen_ref(),
+            amod.as_gen_ref(),
+            b.as_gen_ref(),
+            bmod.as_gen_ref(),
+            c.as_gen_ref(),
+        )
+    };
+    if error == std::ptr::null() {
+        Ok((c, amod.lcm(&bmod)?))
+    } else {
+        Err(GiacError::InternalError(error.into()))
+    }
+}
+
+/// Computes the Legendre symbol
+/// ```
+/// use giacrs::gen::Gen;
+/// use giacrs::integers::legendre_symbol;
+///
+/// assert_eq!(1, legendre_symbol(&26.into(), &17.into())?);
+/// assert_eq!(-1, legendre_symbol(&27.into(), &17.into())?);
+/// assert_eq!(0, legendre_symbol(&34.into(), &17.into())?);
+/// # use giacrs::GiacError;
+/// # Ok::<(), GiacError>(())
+/// ```
+/// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node53.html>
+pub fn legendre_symbol(a: &Gen, n: &Gen) -> Result<i8, GiacError> {
+    let mut result = 0;
+    let error = unsafe { ffi::giacrs_gen_legendre(a.as_gen_ref(), n.as_gen_ref(), &mut result) };
+    if error == std::ptr::null() {
+        Ok(result)
+    } else {
+        Err(GiacError::InternalError(error.into()))
+    }
+}
+
+/// Computes the Jacobi symbol
+/// ```
+/// use giacrs::gen::Gen;
+/// use giacrs::integers::jacobi_symbol;
+///
+/// assert_eq!(1, jacobi_symbol(&25.into(), &12.into())?);
+/// assert_eq!(-1, jacobi_symbol(&35.into(), &12.into())?);
+/// assert_eq!(0, jacobi_symbol(&33.into(), &12.into())?);
+/// # use giacrs::GiacError;
+/// # Ok::<(), GiacError>(())
+/// ```
+/// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node54.html>
+pub fn jacobi_symbol(a: &Gen, n: &Gen) -> Result<i8, GiacError> {
+    let mut result = 0;
+    let error = unsafe { ffi::giacrs_gen_jacobi(a.as_gen_ref(), n.as_gen_ref(), &mut result) };
+    if error == std::ptr::null() {
+        Ok(result)
+    } else {
+        Err(GiacError::InternalError(error.into()))
     }
 }
