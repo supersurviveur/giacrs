@@ -8,7 +8,7 @@ This library is under developpment. Feel free to [contribute](#contributing) !
 
 ```toml
 [dependencies]
-giacrs = "0.1.0"
+giacrs = "0.1.3"
 ```
 
 You must have the giac library installed on your system:\

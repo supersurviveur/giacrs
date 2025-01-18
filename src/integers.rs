@@ -265,7 +265,7 @@ impl Gen {
     /// ```
     /// <https://www-fourier.ujf-grenoble.fr/~parisse/giac/doc/en/cascmd_en/node42.html>
     pub fn is_pseudoprime(&self) -> Result<PseudoPrime, GiacError> {
-        let mut result = 0;
+        let mut result: u8 = 0;
         let error = unsafe { ffi::giacrs_gen_is_pseudoprime(self.as_gen_ref(), &mut result) };
         if error == std::ptr::null() {
             Ok(match result {
